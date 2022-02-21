@@ -1,7 +1,11 @@
 // Created by Dong Zhong on 2022/02/18.
 
+#include <iostream>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include "stb_image.h"
 
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 
@@ -62,6 +66,170 @@ void ProcessInput(GLFWwindow* window) {
   }
 }
 
-void Init() {}
+const char* kVertexShader = R"__SHADER__(
+#version 330 core
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec3 col;
+layout (location = 2) in vec2 tex;
 
-void Draw() {}
+out vec3 our_col;
+out vec2 our_tex;
+
+void main() {
+  gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
+  our_col = col;
+  our_tex = tex;
+}
+)__SHADER__";
+
+const char* kFragmentShader = R"__SHADER__(
+#version 330 core
+out vec4 frag_color;
+
+in vec3 our_col;
+in vec2 our_tex;
+
+uniform sampler2D our_texture1;
+uniform sampler2D our_texture2;
+
+void main() {
+  frag_color = mix(texture(our_texture1, our_tex), texture(our_texture2, our_tex), 0.2);
+}
+)__SHADER__";
+
+float vertices[] = {
+    0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+    0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f
+};
+
+unsigned int indices[] = { // 注意索引从0开始!
+    0, 1, 3, // 第一个三角形
+    1, 2, 3  // 第二个三角形
+};
+
+GLuint program;
+GLuint vertex_array;
+
+GLuint texture_1, texture_2;
+
+void Init() {
+  // Texture
+  glGenTextures(1, &texture_1);
+  glGenTextures(1, &texture_2);
+
+  glBindTexture(GL_TEXTURE_2D, texture_1);
+
+  stbi_set_flip_vertically_on_load(true);
+
+  int width, height, nr_channels;
+  unsigned char *data = stbi_load("/Users/bilibili/DongZhong/myCodes/LearnOpenGL/res/container.jpg", &width, &height, &nr_channels, 0);
+
+  if (data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    std::cout << "DongZhong: " << "Failed to load texture";
+  }
+
+  stbi_image_free(data);
+
+  glBindTexture(GL_TEXTURE_2D, texture_2);
+
+  data = stbi_load("/Users/bilibili/DongZhong/myCodes/LearnOpenGL/res/awesomeface.png", &width, &height, &nr_channels, 0);
+
+  if (data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    std::cout << "DongZhong: " << "Failed to load texture";
+  }
+
+  stbi_image_free(data);
+
+  // Shader and Program
+  GLint success;
+  char info_log[512];
+
+  GLuint vertex_shader;
+  vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+
+  glShaderSource(vertex_shader, 1, &kVertexShader, nullptr);
+  glCompileShader(vertex_shader);
+
+  glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
+  if (!success) {
+    glGetShaderInfoLog(vertex_shader, 512, nullptr, info_log);
+    std::cout << "DongZhong: " << "Vertex shader compile error: " << info_log;
+  }
+
+  GLuint fragment_shader;
+  fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+
+  glShaderSource(fragment_shader, 1, &kFragmentShader, nullptr);
+  glCompileShader(fragment_shader);
+
+  glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
+  if (!success) {
+    glGetShaderInfoLog(fragment_shader, 512, nullptr, info_log);
+    std::cout << "DongZhong: " << "Fragment shader compile error: " << info_log;
+  }
+
+  program = glCreateProgram();
+
+  glAttachShader(program, vertex_shader);
+  glAttachShader(program, fragment_shader);
+  glLinkProgram(program);
+
+  glGetProgramiv(program, GL_LINK_STATUS, &success);
+  if (!success) {
+    glGetProgramInfoLog(program, 512, nullptr, info_log);
+    std::cout << "DongZhong: " << "Program link error: " << info_log;
+  }
+
+  glDeleteShader(vertex_shader);
+  glDeleteShader(fragment_shader);
+
+
+  // Vertex Buffer Object
+  glGenVertexArrays(1, &vertex_array);
+
+  glBindVertexArray(vertex_array);
+
+  GLuint vertex_buffer;
+  glGenBuffers(1, &vertex_buffer);
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  GLuint index_buffer;
+  glGenBuffers(1, &index_buffer);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(float)));
+  glEnableVertexAttribArray(2);
+
+  glUseProgram(program);
+
+  glUniform1i(glGetUniformLocation(program, "our_texture1"), 0);
+  glUniform1i(glGetUniformLocation(program, "our_texture2"), 1);
+  std::cout << "DongZhong: " << glGetUniformLocation(program, "our_texture1") << ", " << glGetUniformLocation(program, "our_texture2");
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture_1);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, texture_2);
+}
+
+void Draw() {
+  glBindVertexArray(vertex_array);
+
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
