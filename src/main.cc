@@ -4,6 +4,9 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "stb_image.h"
 
@@ -75,8 +78,10 @@ layout (location = 2) in vec2 tex;
 out vec3 our_col;
 out vec2 our_tex;
 
+uniform mat4 trans;
+
 void main() {
-  gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
+  gl_Position = trans * vec4(pos.x, pos.y, pos.z, 1.0);
   our_col = col;
   our_tex = tex;
 }
@@ -230,6 +235,13 @@ void Init() {
 
 void Draw() {
   glBindVertexArray(vertex_array);
+
+  glm::mat4 trans(1.0f);
+  trans = glm::translate(trans, glm::vec3(0.3f, 0.2f, 0.0f));
+  float time = (float)glfwGetTime();
+  trans = glm::rotate(trans, time, glm::vec3(0.0f, 0.0f, 1.0f));
+
+  glUniformMatrix4fv(glGetUniformLocation(program, "trans"), 1, GL_FALSE, glm::value_ptr(trans));
 
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
