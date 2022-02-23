@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "camera.h"
 #include "stb_image.h"
 
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -17,6 +18,9 @@ void ProcessInput(GLFWwindow* window);
 void Init();
 
 void Draw();
+
+float delta_time = 0.0f;
+float current_time = 0.0f;
 
 int main() {
   // TODO:
@@ -42,7 +46,12 @@ int main() {
 
   Init();
 
+  current_time = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
+    float current_frame = glfwGetTime();
+    delta_time = current_frame - current_time;
+    current_time = current_frame;
+
     ProcessInput(window);
 
     glEnable(GL_DEPTH_TEST);
@@ -65,9 +74,37 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);
 }
 
+Camera camera;
+
 void ProcessInput(GLFWwindow* window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    camera.Move(Camera::Direction::kForward, delta_time);
+  }
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    camera.Move(Camera::Direction::kBackward, delta_time);
+  }
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    camera.Move(Camera::Direction::kRight, delta_time);
+  }
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    camera.Move(Camera::Direction::kLeft, delta_time);
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    camera.Rotate(Camera::Rotation::kUp, delta_time);
+  }
+  if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    camera.Rotate(Camera::Rotation::kDown, delta_time);
+  }
+  if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+    camera.Rotate(Camera::Rotation::kRight, delta_time);
+  }
+  if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+    camera.Rotate(Camera::Rotation::kLeft, delta_time);
   }
 }
 
@@ -250,7 +287,6 @@ void Init() {
 
   glUniform1i(glGetUniformLocation(program, "our_texture1"), 0);
   glUniform1i(glGetUniformLocation(program, "our_texture2"), 1);
-  std::cout << "DongZhong: " << glGetUniformLocation(program, "our_texture1") << ", " << glGetUniformLocation(program, "our_texture2");
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture_1);
@@ -268,12 +304,19 @@ void Draw() {
   trans = glm::rotate(trans, time, glm::vec3(0.0f, 0.0f, 1.0f));
   glUniformMatrix4fv(glGetUniformLocation(program, "trans"), 1, GL_FALSE, glm::value_ptr(trans));
 
-  glm::mat4 view(1.0f);
-  view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+  auto view = camera.GetViewMatrix();
   glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
   glm::mat4 project = glm::perspective(glm::radians(45.0f), (float)800 / 600, 0.1f, 100.0f);
   glUniformMatrix4fv(glGetUniformLocation(program, "project"), 1, GL_FALSE, glm::value_ptr(project));
+
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+
+  trans = glm::mat4(1.0);
+  trans = glm::translate(trans, glm::vec3(-0.6f, -0.2f, -4.0f));
+  trans = glm::rotate(trans, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+  trans = glm::rotate(trans, -time * 3.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+  glUniformMatrix4fv(glGetUniformLocation(program, "trans"), 1, GL_FALSE, glm::value_ptr(trans));
 
   glDrawArrays(GL_TRIANGLES, 0, 36);
 }
