@@ -45,8 +45,10 @@ int main() {
   while (!glfwWindowShouldClose(window)) {
     ProcessInput(window);
 
+    glEnable(GL_DEPTH_TEST);
+
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     Draw();
 
@@ -72,17 +74,17 @@ void ProcessInput(GLFWwindow* window) {
 const char* kVertexShader = R"__SHADER__(
 #version 330 core
 layout (location = 0) in vec3 pos;
-layout (location = 1) in vec3 col;
-layout (location = 2) in vec2 tex;
+layout (location = 1) in vec2 tex;
 
 out vec3 our_col;
 out vec2 our_tex;
 
 uniform mat4 trans;
+uniform mat4 view;
+uniform mat4 project;
 
 void main() {
-  gl_Position = trans * vec4(pos.x, pos.y, pos.z, 1.0);
-  our_col = col;
+  gl_Position = project * view * trans * vec4(pos.x, pos.y, pos.z, 1.0);
   our_tex = tex;
 }
 )__SHADER__";
@@ -91,7 +93,6 @@ const char* kFragmentShader = R"__SHADER__(
 #version 330 core
 out vec4 frag_color;
 
-in vec3 our_col;
 in vec2 our_tex;
 
 uniform sampler2D our_texture1;
@@ -103,15 +104,47 @@ void main() {
 )__SHADER__";
 
 float vertices[] = {
-    0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
-    0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f
-};
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-unsigned int indices[] = { // 注意索引从0开始!
-    0, 1, 3, // 第一个三角形
-    1, 2, 3  // 第二个三角形
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
 GLuint program;
@@ -208,18 +241,10 @@ void Init() {
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  GLuint index_buffer;
-  glGenBuffers(1, &index_buffer);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(float)));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(float)));
-  glEnableVertexAttribArray(2);
 
   glUseProgram(program);
 
@@ -238,10 +263,17 @@ void Draw() {
 
   glm::mat4 trans(1.0f);
   trans = glm::translate(trans, glm::vec3(0.3f, 0.2f, 0.0f));
+  trans = glm::rotate(trans, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
   float time = (float)glfwGetTime();
   trans = glm::rotate(trans, time, glm::vec3(0.0f, 0.0f, 1.0f));
-
   glUniformMatrix4fv(glGetUniformLocation(program, "trans"), 1, GL_FALSE, glm::value_ptr(trans));
 
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  glm::mat4 view(1.0f);
+  view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+  glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
+  glm::mat4 project = glm::perspective(glm::radians(45.0f), (float)800 / 600, 0.1f, 100.0f);
+  glUniformMatrix4fv(glGetUniformLocation(program, "project"), 1, GL_FALSE, glm::value_ptr(project));
+
+  glDrawArrays(GL_TRIANGLES, 0, 36);
 }
