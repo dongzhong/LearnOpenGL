@@ -34,6 +34,8 @@ class Camera {
 
   void Rotate(Rotation rotation, float delta_time);
 
+  glm::vec3 GetPosition() const { return position_; }
+
  private:
   void UpdateCamera();
 
