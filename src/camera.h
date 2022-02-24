@@ -36,6 +36,8 @@ class Camera {
 
   glm::vec3 GetPosition() const { return position_; }
 
+  glm::vec3 GetFront() const { return front_; }
+
  private:
   void UpdateCamera();
 
