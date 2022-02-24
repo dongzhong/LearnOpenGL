@@ -88,7 +88,8 @@ int main() {
 
   Shader shader("/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/vertex_shader.vs",
                 "/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/fragment_shader.fs");
-  shader.Use();
+  Shader light_shader("/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/light_vertex_shader.vs",
+                      "/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/light_fragment_shader.fs");
 
   GLuint vertex_array;
   glGenVertexArrays(1, &vertex_array);
@@ -107,17 +108,17 @@ int main() {
   glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(5 * sizeof(float)));
   glEnableVertexAttribArray(2);
 
-  shader.SetInt("our_texture1", 0);
+  GLuint light_array;
+  glGenVertexArrays(1, &light_array);
+  glBindVertexArray(light_array);
 
-  glm::vec3 light_color(1.0f, 1.0f, 1.0f);
-  shader.SetVec3("light", light_color);
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 
-  glm::vec3 light_position(1.0f, 2.0f, 0.0f);
-  shader.SetVec3("light_pos", light_position);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+  glEnableVertexAttribArray(0);
 
   GLuint texture_1;
   glGenTextures(1, &texture_1);
-
   glBindTexture(GL_TEXTURE_2D, texture_1);
 
   stbi_set_flip_vertically_on_load(true);
@@ -135,9 +136,6 @@ int main() {
 
   stbi_image_free(data);
 
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture_1);
-
   current_time = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
     float current_frame = glfwGetTime();
@@ -151,7 +149,19 @@ int main() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    shader.Use();
     glBindVertexArray(vertex_array);
+
+    shader.SetInt("our_texture1", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_1);
+
+    glm::vec3 light_color(1.0f, 1.0f, 1.0f);
+    shader.SetVec3("light", light_color);
+
+    glm::vec3 light_position(1.0f, 2.0f, 0.0f);
+    shader.SetVec3("light_pos", light_position);
 
     glm::mat4 trans(1.0f);
     trans = glm::translate(trans, glm::vec3(0.3f, 0.2f, 0.0f));
@@ -175,6 +185,18 @@ int main() {
     trans = glm::rotate(trans, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     trans = glm::rotate(trans, -time * 3.0f, glm::vec3(0.0f, 0.0f, 1.0f));
     shader.SetMat4("trans", trans);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    light_shader.Use();
+    glBindVertexArray(light_array);
+
+    trans = glm::mat4(1.0f);
+    trans = glm::translate(trans, light_position);
+    trans = glm::scale(trans, glm::vec3(0.1f, 0.1f, 0.1f));
+    light_shader.SetMat4("trans", trans);
+    light_shader.SetMat4("view", view);
+    light_shader.SetMat4("project", project);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
