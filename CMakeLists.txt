@@ -9,7 +9,7 @@ add_subdirectory(third-party/glfw)
 add_subdirectory(third-party/glm)
 add_subdirectory(third-party/imgui)
 
-file(GLOB_RECURSE SRC "src/*" "src/**/*")
+file(GLOB_RECURSE SRC "src/*" "src/**/*" "res/shaders/*")
 
 add_executable(opengl ${SRC})
 
