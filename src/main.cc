@@ -51,8 +51,8 @@ int main() {
     return -1;
   }
 
-  Shader shader("/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/model_vertex_shader.vs",
-                "/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/model_fragment_shader.fs");
+  Shader shader("/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/vertex_shader.vs",
+                "/Users/bilibili/DongZhong/myCodes/LearnOpenGL/src/fragment_shader.fs");
 
   stbi_set_flip_vertically_on_load(true);
 
@@ -73,7 +73,9 @@ int main() {
 
     shader.Use();
 
-    shader.SetVec3("view_pos", camera.GetPosition());
+    shader.SetVec3("view_position", camera.GetPosition());
+
+    shader.SetFloat("material.shininess", 32);
 
     shader.SetVec3("direct_light.direction", -0.2f, -1.0f, -0.3f);
     shader.SetVec3("direct_light.ambient", 0.05f, 0.05f, 0.05f);

@@ -37,7 +37,7 @@ void Mesh::Draw(const Shader& shader) {
     } else if (name == "texture_specular") {
       number = std::to_string(specular_num++);
     }
-    shader.SetInt((name + number).c_str(), i);
+    shader.SetInt(("material." + name + number).c_str(), i);
     glBindTexture(GL_TEXTURE_2D, textures_[i].texture_id_);
   }
 
@@ -60,8 +60,6 @@ void Mesh::SetupMesh() {
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(GLuint), &indices_[0], GL_STATIC_DRAW);
-
-  std::cout << "DongZhong: " << vertices_.size() << ", " << indices_.size() << std::endl;
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
