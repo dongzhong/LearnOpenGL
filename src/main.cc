@@ -30,6 +30,17 @@ glm::vec3 point_light[] = {
     glm::vec3( 0.0f,  0.0f, -3.0f)
 };
 
+const float vertices[] = {
+  -100.0f, -0.5f, -100.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+  100.0f, -0.5f, 100.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  100.0f, -0.5f, -100.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+  -100.0f, -0.5f, -100.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+  -100.0f, -0.5f, 100.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0,
+  100.0f, -0.5f, 100.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+};
+
+bool is_blinn = true;
+
 int main() {
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -56,6 +67,27 @@ int main() {
 
   stbi_set_flip_vertically_on_load(true);
 
+  GLuint texture_diffuse = TextureFromFile("container2.png", "/Users/bilibili/DongZhong/myCodes/LearnOpenGL/res");
+  GLuint texture_specular = TextureFromFile("container2.png", "/Users/bilibili/DongZhong/myCodes/LearnOpenGL/res");
+
+  GLuint vao;
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
+
+  GLuint vbo;
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * sizeof(GLfloat), &vertices[0], GL_STATIC_DRAW);
+
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+
+  glBindVertexArray(0);
+
   Model model("/Users/bilibili/DongZhong/myCodes/LearnOpenGL/res/model/nanosuit/nanosuit.obj");
 
   current_time = glfwGetTime();
@@ -71,18 +103,25 @@ int main() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glBindVertexArray(vao);
+
     shader.Use();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_diffuse);
+    shader.SetInt("material.texture_diffuse1", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture_specular);
+    shader.SetInt("material.texture_specular1", 1);
 
     shader.SetVec3("view_position", camera.GetPosition());
 
-    shader.SetFloat("material.shininess", 32);
+    shader.SetBool("blinn", is_blinn);
 
-    shader.SetVec3("direct_light.direction", -0.2f, -1.0f, -0.3f);
-    shader.SetVec3("direct_light.ambient", 0.05f, 0.05f, 0.05f);
-    shader.SetVec3("direct_light.diffuse", 0.4f, 0.4f, 0.4f);
-    shader.SetVec3("direct_light.specular", 0.5f, 0.5f, 0.5f);
+    shader.SetFloat("material.shininess", is_blinn ? 16.0f : 8.0f);
 
-    shader.SetVec3("point_light[0].position", point_light[0]);
+    shader.SetVec3("point_light[0].position", glm::vec3(0.0f, 1.0f, 1.0f));
     shader.SetVec3("point_light[0].ambient", 0.05f, 0.05f, 0.05f);
     shader.SetVec3("point_light[0].diffuse", 0.8f, 0.8f, 0.8f);
     shader.SetVec3("point_light[0].specular", 1.0f, 1.0f, 1.0f);
@@ -90,17 +129,7 @@ int main() {
     shader.SetFloat("point_light[0].linear", 0.09f);
     shader.SetFloat("point_light[0].quadratic", 0.032f);
 
-    shader.SetVec3("point_light[1].position", point_light[1]);
-    shader.SetVec3("point_light[1].ambient", 0.05f, 0.05f, 0.05f);
-    shader.SetVec3("point_light[1].diffuse", 0.8f, 0.8f, 0.8f);
-    shader.SetVec3("point_light[1].specular", 1.0f, 1.0f, 1.0f);
-    shader.SetFloat("point_light[1].constant", 1.0f);
-    shader.SetFloat("point_light[1].linear", 0.09f);
-    shader.SetFloat("point_light[1].quadratic", 0.032f);
-
     glm::mat4 model_trans(1.0f);
-    model_trans = glm::translate(model_trans, glm::vec3(0.0f, -1.0f, 0.0f));
-    model_trans = glm::scale(model_trans, glm::vec3(0.1f, 0.1f, 0.1f));
     shader.SetMat4("model", model_trans);
 
     auto view = camera.GetViewMatrix();
@@ -109,7 +138,14 @@ int main() {
     glm::mat4 project = glm::perspective(glm::radians(45.0f), (float)screen_width / screen_height, 0.1f, 100.0f);
     shader.SetMat4("project", project);
 
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    //model_trans = glm::translate(model_trans, glm::vec3(0.0f, -1.0f, 0.0f));
+    model_trans = glm::scale(model_trans, glm::vec3(0.1f, 0.1f, 0.1f));
+    shader.SetMat4("model", model_trans);
     model.Draw(shader);
+
+    glBindVertexArray(0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -125,6 +161,8 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
   screen_width = width;
   screen_height = height;
 }
+
+bool is_blinn_key_pressed = false;
 
 void ProcessInput(GLFWwindow* window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -155,5 +193,12 @@ void ProcessInput(GLFWwindow* window) {
   }
   if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
     camera.Rotate(Camera::Rotation::kLeft, delta_time);
+  }
+  if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !is_blinn_key_pressed) {
+    is_blinn = !is_blinn;
+    is_blinn_key_pressed = true;
+  }
+  if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE) {
+    is_blinn_key_pressed = false;
   }
 }
