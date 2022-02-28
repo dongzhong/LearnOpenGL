@@ -464,5 +464,9 @@ void DrawScene(const Material& material, const Shader& shader, GLuint vao) {
     glDrawArrays(GL_TRIANGLES, 0, 36);
   }
 
+  glm::mat4 model(1.0f);
+  shader.SetMat4("model", model);
+  glDrawArrays(GL_TRIANGLES, 36, 6);
+
   glBindVertexArray(0);
 }

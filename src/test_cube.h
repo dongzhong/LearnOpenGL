@@ -11,7 +11,7 @@ class TestCube {
  public:
   static GLuint GenerateVAO();
 
-  static Vertex vertices[36];
+  static Vertex vertices[42];
 
   static glm::vec3 cube_positions[10];
 };

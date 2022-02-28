@@ -23,7 +23,7 @@ const glm::vec2 tex_coords_2(0.0f, 1.0f);
 const glm::vec2 tex_coords_3(1.0f, 0.0f);
 const glm::vec2 tex_coords_4(1.0f, 1.0f);
 
-Vertex TestCube::vertices[36] = {
+Vertex TestCube::vertices[42] = {
   // front
   {pos_8, normal_1, tex_coords_1},
   {pos_5, normal_1, tex_coords_2},
@@ -71,6 +71,13 @@ Vertex TestCube::vertices[36] = {
   {pos_4, normal_6, tex_coords_1},
   {pos_5, normal_6, tex_coords_4},
   {pos_8, normal_6, tex_coords_3},
+
+  {glm::vec3(10.0f, -0.5f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(10.0f, 0.0f)},
+  {glm::vec3(-10.0f, -0.5f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
+  {glm::vec3(-10.0f, -0.5f, -10.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 10.0f)},
+  {glm::vec3(10.0f, -0.5f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(10.0f, 0.0f)},
+  {glm::vec3(-10.0f, -0.5f, -10.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 10.0f)},
+  {glm::vec3(10.0f, -0.5f, -10.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(10.0f, 10.0f)}
 };
 
 glm::vec3 TestCube::cube_positions[10] = {
