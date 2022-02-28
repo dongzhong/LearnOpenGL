@@ -55,6 +55,10 @@ struct SpotLight {
 
 #define POINT_LIGHT_COUNT 4
 
+uniform bool is_blinn_phong;
+
+uniform bool gamma = true;
+
 uniform vec3 view_position;
 
 uniform Material material;
@@ -89,6 +93,10 @@ void main() {
     res += CalculateSpotLight(spot_light, normal, frag_pos, view_direction);
   }
 
+  if (gamma) {
+    res = pow(res, vec3(1.0 / 2.2));
+  }
+
   frag_color = vec4(res, 1.0);
 }
 
@@ -103,8 +111,15 @@ vec3 CalculateDirectLight(DirectLight light, vec3 normal, vec3 view_dir) {
   float diff = max(dot(normal, light_dir), 0.0);
   vec3 diffuse = light.diffuse * diff * diffuse1;
 
-  vec3 reflect_dir = reflect(-light_dir, normal);
-  float spec = pow(max(dot(reflect_dir, view_dir), 0.0), material.shininess);
+  float spec;
+  if (is_blinn_phong) {
+    vec3 view_direction = normalize(view_position - frag_pos);
+    vec3 half_vec = normalize(light_dir + view_direction);
+    spec = pow(max(dot(normal, half_vec), 0.0), material.shininess);
+  } else {
+    vec3 reflect_dir = reflect(-light_dir, normal);
+    spec = pow(max(dot(reflect_dir, view_dir), 0.0), material.shininess);
+  }
   vec3 specular = light.specular * spec * specular1;
 
   return ambient + diffuse + specular;
@@ -120,8 +135,15 @@ vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3
   float diff = max(dot(light_dir, normal), 0.0);
   vec3 diffuse = light.diffuse * diff * diffuse1;
 
-  vec3 reflect_dir = reflect(-light_dir, normal);
-  float spec = pow(max(dot(reflect_dir, view_dir), 0.0), material.shininess);
+  float spec;
+  if (is_blinn_phong) {
+    vec3 view_direction = normalize(view_position - frag_position);
+    vec3 half_vec = normalize(light_dir + view_direction);
+    spec = pow(max(dot(normal, half_vec), 0.0), material.shininess);
+  } else {
+    vec3 reflect_dir = reflect(-light_dir, normal);
+    spec = pow(max(dot(reflect_dir, view_dir), 0.0), material.shininess);
+  }
   vec3 specular = light.specular * spec * specular1;
 
   float distance = length(light.position - frag_pos);
@@ -144,8 +166,15 @@ vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 frag_position, vec3 v
   float diff = max(dot(light_dir, normal), 0.0);
   vec3 diffuse = light.diffuse * diff * diffuse1 * intensity;
 
-  vec3 reflect_dir = reflect(-light_dir, normal);
-  float spec = pow(max(dot(reflect_dir, view_dir), 0.0), material.shininess);
+  float spec;
+  if (is_blinn_phong) {
+    vec3 view_direction = normalize(view_position - frag_position);
+    vec3 half_vec = normalize(light_dir + view_direction);
+    spec = pow(max(dot(normal, half_vec), 0.0), material.shininess);
+  } else {
+    vec3 reflect_dir = reflect(-light_dir, normal);
+    spec = pow(max(dot(reflect_dir, view_dir), 0.0), material.shininess);
+  }
   vec3 specular = light.specular * spec * specular1 * intensity;
 
   float distance = length(light.position - frag_pos);

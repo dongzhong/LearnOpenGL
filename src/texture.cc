@@ -19,17 +19,29 @@ GLuint TextureFromFile(const char* path, const std::string& directory, bool gamm
   unsigned char *data = stbi_load(file_name.c_str(), &width, &height, &nr_channels, 0);
 
   if (data) {
+    GLint internal_format;
     GLenum format;
     if (nr_channels == 1) {
+      internal_format = GL_RED;
       format = GL_RED;
     } else if (nr_channels == 3) {
       format = GL_RGB;
+      if (gamma) {
+        internal_format = GL_SRGB;
+      } else {
+        internal_format = GL_RGB;
+      }
     } else if (nr_channels == 4) {
       format = GL_RGBA;
+      if (gamma) {
+        internal_format = GL_SRGB_ALPHA;
+      } else {
+        internal_format = GL_RGBA;
+      }
     }
 
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

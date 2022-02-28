@@ -24,6 +24,10 @@
 unsigned int g_width = 1280;
 unsigned int g_height = 720;
 
+bool g_is_blinn_phong = false;
+
+bool g_gamma = true;
+
 Camera camera(glm::vec3(0.2f, 0.3f, 3.0f));
 
 DirectLight direct_light;
@@ -94,8 +98,8 @@ int main() {
 
   Shader shader("vertex_shader.vs", "phong_lighting_model.fs");
 
-  Texture texture_diffuse1(TextureFromFile("container.png", TEXTURE_PATH));
-  Texture texture_specular1(TextureFromFile("container.png", TEXTURE_PATH));
+  Texture texture_diffuse1(TextureFromFile("container.png", TEXTURE_PATH, true));
+  Texture texture_specular1(TextureFromFile("container.png", TEXTURE_PATH, true));
 
   Material material(texture_diffuse1, texture_specular1, 32);
 
@@ -165,9 +169,14 @@ void RenderGUI() {
               camera.GetPosition().y,
               camera.GetPosition().z);
 
+  ImGui::Checkbox("Blinn-Phong", &g_is_blinn_phong);
+
+  ImGui::Checkbox("Gamma", &g_gamma);
+
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
               1000.0f / ImGui::GetIO().Framerate,
               ImGui::GetIO().Framerate);
+
   ImGui::End();
 }
 
@@ -381,6 +390,10 @@ void DrawScene(const Material& material, const Shader& shader, GLuint vao) {
   glBindVertexArray(vao);
 
   shader.Use();
+
+  shader.SetBool("is_blinn_phong", g_is_blinn_phong);
+
+  shader.SetBool("gamma", g_gamma);
 
   shader.SetMat4("view", camera.GetViewMatrix());
   shader.SetMat4("project", glm::perspective(glm::radians(45.0f), (float)g_width / g_height, 0.1f, 100.0f));
