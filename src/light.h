@@ -55,12 +55,15 @@ class DirectLight : public Light {
   DirectLight(const glm::vec3& ambient = glm::vec3(0.05f, 0.05f, 0.05f),
               const glm::vec3& diffuse = glm::vec3(0.4f, 0.4f, 0.4f),
               const glm::vec3& specular = glm::vec3(0.5f, 0.5, 0.5f),
-              const glm::vec3& direction = glm::vec3(-0.2f, -1.0f, -0.3f));
+              const glm::vec3& direction = glm::vec3(0.0f, 0.0f, -1.0f));
 
   ~DirectLight() override = default;
 
   glm::vec3 GetDirection() const { return direction_; }
   void SetDirection(const glm::vec3& direction);
+
+  glm::vec2 GetDirectionAngle() const;
+  void SetDirectionAngle(float pitch, float yaw);
 
  private:
   glm::vec3 direction_;

@@ -1,7 +1,5 @@
 // Created by Dong Zhong on 2022/02/18.
 
-#include <iostream>
-
 #include <cmath>
 
 #include <glad/glad.h>
@@ -293,82 +291,101 @@ void SettingLight(DirectLight* direct_light,
   ImGui::Begin("Light");
 
   // Direct light
+  ImGui::PushID("Direct Light");
   ImGui::Text("Direct Light");
 
   bool enable = direct_light->IsEnabled();
-  if (ImGui::Checkbox("Enable (Direct Light)", &enable)) {
+  if (ImGui::Checkbox("Enable", &enable)) {
     direct_light->SetEnable(enable);
   }
 
+  glm::vec2 angles = direct_light->GetDirectionAngle();
+  bool angle_changed = ImGui::SliderFloat("Pitch", &angles.x, -90.0f, 90.0f);
+  angle_changed = ImGui::SliderFloat("Yaw", &angles.y, 0.0f, 359.99f) || angle_changed;
+  if (angle_changed) {
+    direct_light->SetDirectionAngle(angles.x, angles.y);
+  }
+
   glm::vec3 color = direct_light->GetAmbient();
-  if (ImGui::ColorEdit3("Ambient color (Direct Light)", (float*)&color)) {
+  if (ImGui::ColorEdit3("Ambient Color", (float*)&color)) {
     direct_light->SetAmbient(color);
   }
 
   color = direct_light->GetDiffuse();
-  if (ImGui::ColorEdit3("Diffuse color (Direct Light)", (float*)&color)) {
+  if (ImGui::ColorEdit3("Diffuse Color", (float*)&color)) {
     direct_light->SetDiffuse(color);
   }
 
   color = direct_light->GetSpecular();
-  if (ImGui::ColorEdit3("Specular color (Direct Light)", (float*)&color)) {
+  if (ImGui::ColorEdit3("Specular Color", (float*)&color)) {
     direct_light->SetSpecular(color);
   }
+  ImGui::PopID();
 
   ImGui::Separator();
 
   // Point light
   for (std::size_t i = 0; i < point_light_num; ++i) {
-    ImGui::Text(std::string("Point Light " + std::to_string(i)).c_str());
+    std::string point_light_id = std::string("Point Light " + std::to_string(i));
+
+    ImGui::PushID(point_light_id.c_str());
+    ImGui::Text(point_light_id.c_str());
 
     enable = point_lights[i].IsEnabled();
-    if (ImGui::Checkbox(std::string("Enable (Point Light " + std::to_string(i) + ")").c_str(), &enable)) {
+    if (ImGui::Checkbox("Enable", &enable)) {
       point_lights[i].SetEnable(enable);
     }
 
+    glm::vec3 point_position = point_lights[i].GetPosition();
+    if (ImGui::InputFloat3("Position", (float*)(&point_position))) {
+      point_lights[i].SetPosition(point_position);
+    }
+
     color = point_lights[i].GetAmbient();
-    if (ImGui::ColorEdit3(std::string("Ambient color (Point Light " + std::to_string(i) + ")").c_str(), (float*)&color)) {
+    if (ImGui::ColorEdit3("Ambient Color", (float*)&color)) {
       point_lights[i].SetAmbient(color);
     }
 
     color = point_lights[i].GetDiffuse();
-    if (ImGui::ColorEdit3(std::string("Diffuse color (Point Light " + std::to_string(i) + ")").c_str(), (float*)&color)) {
+    if (ImGui::ColorEdit3("Diffuse Color", (float*)&color)) {
       point_lights[i].SetDiffuse(color);
     }
 
     color = point_lights[i].GetSpecular();
-    if (ImGui::ColorEdit3(std::string("Specular color (Point Light " + std::to_string(i) + ")").c_str(), (float*)&color)) {
+    if (ImGui::ColorEdit3("Specular Color", (float*)&color)) {
       point_lights[i].SetSpecular(color);
     }
+    ImGui::PopID();
 
     ImGui::Separator();
   }
 
   // Spot light
+  ImGui::PushID("Spot Light");
   ImGui::Text("Spot Light");
 
   enable = spot_light->IsEnabled();
-  if (ImGui::Checkbox("Enable (Spot Light)", &enable)) {
+  if (ImGui::Checkbox("Enable", &enable)) {
     spot_light->SetEnable(enable);
   }
 
   color = spot_light->GetAmbient();
-  if (ImGui::ColorEdit3("Ambient color (Spot Light)", (float*)&color)) {
+  if (ImGui::ColorEdit3("Ambient Color", (float*)&color)) {
     spot_light->SetAmbient(color);
   }
 
   color = spot_light->GetDiffuse();
-  if (ImGui::ColorEdit3("Diffuse color (Spot Light)", (float*)&color)) {
+  if (ImGui::ColorEdit3("Diffuse Color", (float*)&color)) {
     spot_light->SetDiffuse(color);
   }
 
   color = spot_light->GetSpecular();
-  if (ImGui::ColorEdit3("Specular color (Spot Light)", (float*)&color)) {
+  if (ImGui::ColorEdit3("Specular Color", (float*)&color)) {
     spot_light->SetSpecular(color);
   }
 
   float cut_off = spot_light->GetCutOff();
-  if (ImGui::SliderFloat("Cut off (Spot Light)", &cut_off, 0.0f, 90.0f)) {
+  if (ImGui::SliderFloat("Cut-off", &cut_off, 0.0f, 90.0f)) {
     spot_light->SetCutOff(cut_off);
   }
 
@@ -377,9 +394,10 @@ void SettingLight(DirectLight* direct_light,
     outer_cut_off = cut_off;
     spot_light->SetOuterCutOff(outer_cut_off);
   }
-  if (ImGui::SliderFloat("Outer cut off (Spot Light)", &outer_cut_off, cut_off, 90.0f)) {
+  if (ImGui::SliderFloat("Outer Cut-off", &outer_cut_off, cut_off, 90.0f)) {
     spot_light->SetOuterCutOff(outer_cut_off);
   }
+  ImGui::PopID();
 
   ImGui::Separator();
 
