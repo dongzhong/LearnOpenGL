@@ -2,13 +2,18 @@
 
 #include "material.h"
 
-Material::Material(const Texture& diffuse1,
-                   const Texture& specular1,
-                   float shininess)
-    : diffuse1_(diffuse1),
-      specular1_(specular1),
-      shininess_(shininess) {}
+Material::Material(float shininess, bool is_blinn_phong)
+    : shininess_(shininess),
+      is_blinn_phong_(is_blinn_phong) {}
+
+void Material::SetRenderShader(const std::shared_ptr<Shader>& shader) {
+  shader_ = shader;
+}
 
 void Material::SetShinieness(float shininess) {
   shininess_ = shininess;
+}
+
+void Material::SetBlinnPhong(bool blinn_phong) {
+  is_blinn_phong_ = blinn_phong;
 }

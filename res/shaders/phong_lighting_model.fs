@@ -9,6 +9,8 @@ struct Material {
   sampler2D diffuse1;
   sampler2D specular1;
   float shininess;
+
+  bool is_blinn_phong;
 };
 
 struct DirectLight {
@@ -53,9 +55,8 @@ struct SpotLight {
   float quadratic;
 };
 
+#define DIRECT_LIGHT_COUNT 1
 #define POINT_LIGHT_COUNT 4
-
-uniform bool is_blinn_phong;
 
 uniform bool gamma = true;
 
@@ -63,7 +64,7 @@ uniform vec3 view_position;
 
 uniform Material material;
 
-uniform DirectLight direct_light;
+uniform DirectLight direct_light[DIRECT_LIGHT_COUNT];
 uniform PointLight point_light[POINT_LIGHT_COUNT];
 uniform SpotLight spot_light;
 
@@ -79,8 +80,10 @@ void main() {
 
   vec3 res = vec3(0.0, 0.0, 0.0);
 
-  if (direct_light.enable) {
-    res = CalculateDirectLight(direct_light, normal, view_direction);
+  for (int i = 0; i < DIRECT_LIGHT_COUNT; ++i) {
+    if (direct_light[i].enable) {
+      res += CalculateDirectLight(direct_light[i], normal, view_direction);
+    }
   }
 
   for (int i = 0; i < POINT_LIGHT_COUNT; ++i) {
@@ -112,7 +115,7 @@ vec3 CalculateDirectLight(DirectLight light, vec3 normal, vec3 view_dir) {
   vec3 diffuse = light.diffuse * diff * diffuse1;
 
   float spec;
-  if (is_blinn_phong) {
+  if (material.is_blinn_phong) {
     vec3 view_direction = normalize(view_position - frag_pos);
     vec3 half_vec = normalize(light_dir + view_direction);
     spec = pow(max(dot(normal, half_vec), 0.0), material.shininess);
@@ -136,7 +139,7 @@ vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3
   vec3 diffuse = light.diffuse * diff * diffuse1;
 
   float spec;
-  if (is_blinn_phong) {
+  if (material.is_blinn_phong) {
     vec3 view_direction = normalize(view_position - frag_position);
     vec3 half_vec = normalize(light_dir + view_direction);
     spec = pow(max(dot(normal, half_vec), 0.0), material.shininess);
@@ -167,7 +170,7 @@ vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 frag_position, vec3 v
   vec3 diffuse = light.diffuse * diff * diffuse1 * intensity;
 
   float spec;
-  if (is_blinn_phong) {
+  if (material.is_blinn_phong) {
     vec3 view_direction = normalize(view_position - frag_position);
     vec3 half_vec = normalize(light_dir + view_direction);
     spec = pow(max(dot(normal, half_vec), 0.0), material.shininess);
