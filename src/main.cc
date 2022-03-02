@@ -91,7 +91,7 @@ int main() {
 
   g_scene = std::make_shared<Scene>();
   auto material = std::make_shared<Material>(32);
-  auto shader = std::make_shared<Shader>("vertex_shader.vs", "phong_lighting_model.fs");
+  auto shader = std::make_shared<Shader>("vertex_shader.vs", "fragment_shader.fs");
   material->SetRenderShader(shader);
   g_scene->AddMaterial("Cube", material);
 

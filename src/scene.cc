@@ -63,27 +63,29 @@ void Scene::Render(const std::shared_ptr<GlobalController>& global_controller,
   global_controller->RenderCoords();
 
   if (global_controller->IsShadowEnabled()) {
-    auto shadow_material = std::make_shared<Material>();
-    shadow_material->SetRenderShader(render_with_shadow_shader_);
-
-    ApplyAndSetShaderGlobal(render_with_shadow_shader_, global_controller);
-
-    render_with_shadow_shader_->SetMat4("light_space_trans", light_space_trans_);
-
-    glActiveTexture(0);
-    glBindTexture(GL_TEXTURE_2D, shadow_map_);
-    render_with_shadow_shader_->SetInt("shadow_map", 0);
-
     for (auto&& [name, model_pair] : models_) {
-      model_pair.first->Render(shadow_material, global_controller, light_controller);
+      auto material = materials_[model_pair.second];
+      auto shader = material->GetRenderShader();
+
+      ApplyAndSetShaderGlobal(shader, global_controller);
+
+      shader->SetMat4("light_space_trans", light_space_trans_);
+
+      glActiveTexture(0);
+      glBindTexture(GL_TEXTURE_2D, shadow_map_);
+      shader->SetInt("shadow_map", 0);
+      shader->SetBool("shadow_enable", true);
+
+      model_pair.first->Render(material, global_controller, light_controller);
     }
   } else {
     for (auto&& [name, model_pair] : models_) {
       auto material = materials_[model_pair.second];
-
       auto shader = material->GetRenderShader();
 
       ApplyAndSetShaderGlobal(shader, global_controller);
+
+      shader->SetBool("shadow_enable", false);
 
       model_pair.first->Render(material, global_controller, light_controller);
     }
@@ -181,8 +183,6 @@ void Scene::InitShadowMisc() {
   glBindVertexArray(0);
 
   shadow_display_shader_ = std::make_shared<Shader>("vertex_shader.vs", "shadow_display.fs");
-
-  render_with_shadow_shader_ = std::make_shared<Shader>("vertex_shader.vs", "render_with_shadow.fs");
 }
 
 void Scene::DisplayShadowMap() {

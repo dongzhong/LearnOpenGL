@@ -51,8 +51,6 @@ class Scene {
   GLuint shadow_display_vbo_;
   std::shared_ptr<Shader> shadow_display_shader_;
 
-  std::shared_ptr<Shader> render_with_shadow_shader_;
-
   std::map<std::string, std::shared_ptr<Material>> materials_;
 
   std::map<std::string, std::pair<std::shared_ptr<Model>, std::string>> models_;
