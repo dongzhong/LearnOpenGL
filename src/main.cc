@@ -86,6 +86,7 @@ int main() {
     point_light->SetPosition(point_light_position[i]);
     g_light_controller_->AddPointLight("Point Light " + std::to_string(i), point_light);
   }
+  g_light_controller_->AddSpotLight("Spot Light", std::make_shared<SpotLight>());
   g_light_controller_->AddFlashlight(std::make_shared<SpotLight>());
 
   g_scene = std::make_shared<Scene>();

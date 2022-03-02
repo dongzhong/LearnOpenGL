@@ -120,6 +120,34 @@ void SpotLight::SetDirection(const glm::vec3& direction) {
   direction_ = direction;
 }
 
+glm::vec2 SpotLight::GetDirectionAngle() const {
+  float pitch, yaw;
+  pitch = asin(direction_.y);
+  if (direction_.x == 0.0f) {
+    yaw = direction_.z > 0 ? 1.5f * M_PI : 0.5f * M_PI;
+  } else {
+    yaw = atan(-direction_.z / direction_.x);
+  }
+
+  float yaw_degree = glm::degrees(yaw);
+
+  if (direction_.x < 0) {
+    yaw_degree += 180.0f;
+  } else if (direction_.z > 0) {
+    yaw_degree += 360.0f;
+  }
+
+  return glm::vec2(glm::degrees(pitch), yaw_degree);
+}
+
+void SpotLight::SetDirectionAngle(float pitch, float yaw) {
+  glm::vec3 direction;
+  direction.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+  direction.y = sin(glm::radians(pitch));
+  direction.z = -cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+  direction_ = glm::normalize(direction);
+}
+
 void SpotLight::SetCutOff(float cut_off) {
   cut_off_ = cut_off;
 }

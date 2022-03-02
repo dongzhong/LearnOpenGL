@@ -114,6 +114,9 @@ class SpotLight : public PointLight {
   glm::vec3 GetDirection() const { return direction_; }
   void SetDirection(const glm::vec3& direction);
 
+  glm::vec2 GetDirectionAngle() const;
+  void SetDirectionAngle(float pitch, float yaw);
+
   float GetCutOff() const { return cut_off_; }
   void SetCutOff(float cut_off);
 

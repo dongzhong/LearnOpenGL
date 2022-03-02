@@ -57,6 +57,7 @@ struct SpotLight {
 
 #define DIRECT_LIGHT_COUNT 1
 #define POINT_LIGHT_COUNT 4
+#define SPOT_LIGHT_COUNT 2
 
 uniform bool gamma = true;
 
@@ -66,7 +67,8 @@ uniform Material material;
 
 uniform DirectLight direct_light[DIRECT_LIGHT_COUNT];
 uniform PointLight point_light[POINT_LIGHT_COUNT];
-uniform SpotLight spot_light;
+uniform SpotLight spot_light[SPOT_LIGHT_COUNT];
+uniform SpotLight flashlight;
 
 vec3 CalculateDirectLight(DirectLight light, vec3 normal, vec3 view_dir);
 
@@ -92,8 +94,14 @@ void main() {
     }
   }
 
-  if (spot_light.enable) {
-    res += CalculateSpotLight(spot_light, normal, frag_pos, view_direction);
+  for (int i = 0; i < SPOT_LIGHT_COUNT; ++i) {
+    if (spot_light[i].enable) {
+      res += CalculateSpotLight(spot_light[i], normal, frag_pos, view_direction);
+    }
+  }
+
+  if (flashlight.enable) {
+    res += CalculateSpotLight(flashlight, normal, frag_pos, view_direction);
   }
 
   if (gamma) {
