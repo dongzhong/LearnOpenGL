@@ -25,36 +25,27 @@ void Model::SetModelTransformation(const glm::mat4& model_trans) {
 void Model::Render(const std::shared_ptr<Material>& material,
                    const std::shared_ptr<GlobalController>& global_controller,
                    const std::shared_ptr<LightController>& light_controller) {
-  glBindVertexArray(vao_);
-
   auto shader = material->GetRenderShader();
-  shader->Use();
 
-  shader->SetBool("gamma", global_controller->IsGammaEnabled());
-
-  shader->SetMat4("model", model_trans_);
-
-  shader->SetMat4("view", global_controller->GetViewMatrix());
-
-  auto screen_size = global_controller->GetScreenSize();
-  shader->SetMat4("project", glm::perspective(glm::radians(45.0f), (float)screen_size.x / screen_size.y, 0.1f, 100.0f));
-
-  shader->SetVec3("view_position", global_controller->GetCameraPosition());
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, diffuse1_->GetID());
   glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, diffuse1_->GetID());
+  glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, specular1_->GetID());
 
-  shader->SetInt("material.diffuse1", 0);
-  shader->SetInt("material.specular1", 1);
+  shader->SetInt("material.diffuse1", 1);
+  shader->SetInt("material.specular1", 2);
   shader->SetBool("material.is_blinn_phong", material->IsBlinnPhong());
   shader->SetFloat("material.shininess", (float)material->GetShininess());
 
   light_controller->ApplyLighting(shader, global_controller);
 
-  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
+  Draw(shader);
+}
 
+void Model::Draw(const std::shared_ptr<Shader>& shader) {
+  shader->SetMat4("model", model_trans_);
+  glBindVertexArray(vao_);
+  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 }
 

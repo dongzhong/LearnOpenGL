@@ -131,19 +131,9 @@ int main() {
     g_light_controller_->Config();
     g_scene->Config();
 
-    ImGui::Render();
-
-    auto screen_size = g_global_controller_->GetScreenSize();
-    glViewport(0, 0, screen_size.x, screen_size.y);
-
-    glEnable(GL_DEPTH_TEST);
-    auto clear_color = g_global_controller_->GetClearColor();
-    glClearColor(clear_color.r, clear_color.g, clear_color.b, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    g_global_controller_->RenderCoords();
-
     g_scene->Render(g_global_controller_, g_light_controller_);
+
+    ImGui::Render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

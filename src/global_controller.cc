@@ -8,6 +8,8 @@ GlobalController::GlobalController()
     : screen_size_(glm::vec2(1280, 720)),
       clear_color_(glm::vec4(0.1f, 0.1f, 0.1f, 1.0f)),
       gamma_enabled_(true),
+      shadow_enabled_(true),
+      displaying_shadow_map_(shadow_enabled_),
       is_drawing_coords_(true),
       camera_(std::make_shared<Camera>(glm::vec3(0.2f, 0.3f, 3.0f))) {
   coords_shader_ = std::make_shared<Shader>("vertex_shader.vs", "coords_fragment_shader.fs");
@@ -24,6 +26,14 @@ void GlobalController::SetClearColor(const glm::vec4& clear_color) {
 
 void GlobalController::SetGammaEnabled(bool enabled) {
   gamma_enabled_ = enabled;
+}
+
+void GlobalController::SetShadowEnabled(bool enabled) {
+  shadow_enabled_ = enabled;
+}
+
+void GlobalController::SetDisplayingShadowMap(bool displaying) {
+  displaying_shadow_map_ = displaying;
 }
 
 glm::mat4 GlobalController::GetViewMatrix() const {
@@ -53,9 +63,14 @@ void GlobalController::Config() {
                 camera_->GetPosition().z);
   }
 
-  //ImGui::Checkbox("Blinn-Phong", &g_is_blinn_phong);
-
   ImGui::Checkbox("Gamma", &gamma_enabled_);
+
+  ImGui::Checkbox("Shadow", &shadow_enabled_);
+
+  ImGui::Checkbox("Display shadow map", &displaying_shadow_map_);
+  if (!shadow_enabled_) {
+    displaying_shadow_map_ = false;
+  }
 
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
               1000.0f / ImGui::GetIO().Framerate,

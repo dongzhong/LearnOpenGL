@@ -24,6 +24,12 @@ class GlobalController {
   bool IsGammaEnabled() const { return gamma_enabled_; }
   void SetGammaEnabled(bool enabled);
 
+  bool IsShadowEnabled() const { return shadow_enabled_; }
+  void SetShadowEnabled(bool enabled);
+
+  bool IsDisplayingShadowMap() const { return displaying_shadow_map_; }
+  void SetDisplayingShadowMap(bool displaying);
+
   glm::mat4 GetViewMatrix() const;
 
   void CameraMove(Camera::Direction direction, float delta_time);
@@ -45,6 +51,9 @@ class GlobalController {
 
   glm::vec4 clear_color_;
   bool gamma_enabled_;
+
+  bool shadow_enabled_;
+  bool displaying_shadow_map_;
 
   bool is_drawing_coords_;
   std::shared_ptr<Shader> coords_shader_;

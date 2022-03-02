@@ -33,6 +33,8 @@ class Model {
               const std::shared_ptr<GlobalController>& global_controller,
               const std::shared_ptr<LightController>& light_controller);
 
+  void Draw(const std::shared_ptr<Shader>& shader);
+
  private:
   void Setup();
 

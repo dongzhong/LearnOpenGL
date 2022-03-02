@@ -22,6 +22,8 @@ void LightController::Config() {
   ImGui::PushID("Light");
   ImGui::Begin("Light");
 
+  ImGui::PushItemWidth(200);
+
   // Direct Light
   for (auto&& [name, light] : direct_lights_) {
     if (light) {
@@ -140,6 +142,8 @@ void LightController::Config() {
     ImGui::Separator();
     ImGui::PopID();
   }
+
+  ImGui::PopItemWidth();
 
   ImGui::End();
   ImGui::PopID();
