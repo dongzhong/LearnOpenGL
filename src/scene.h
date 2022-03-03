@@ -32,19 +32,12 @@ class Scene {
   void Config();
 
  private:
-  static const GLuint kShadowWidth = 1024;
-  static const GLuint kShadowHeight = 1024;
-
   void InitShadowMisc();
-  void DisplayShadowMap();
+  void DisplayShadowMap(const std::shared_ptr<LightController>& light_controller);
 
   void ApplyAndSetShaderGlobal(const std::shared_ptr<Shader>& shader,
                                const std::shared_ptr<GlobalController>& global_controller);
 
-  glm::mat4 light_space_trans_;
-
-  GLuint shadow_fbo_;
-  GLuint shadow_map_;
   std::shared_ptr<Shader> shadow_shader_;
 
   GLuint shadow_display_vao_;

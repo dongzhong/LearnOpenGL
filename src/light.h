@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 class Light {
@@ -15,6 +16,9 @@ class Light {
     kPoint,
     kSpot,
   };
+
+  static const GLuint kShadowWidth = 1024;
+  static const GLuint kShadowHeight = 1024;
 
   Light(const glm::vec3& ambient = glm::vec3(0.0f, 0.0f, 0.0f),
         const glm::vec3& diffuse = glm::vec3(0.0f, 0.0f, 0.0f),
@@ -38,6 +42,11 @@ class Light {
 
   Type GetType() const { return type_; }
 
+  virtual void GenerateShadowMisc();
+
+  GLuint GetShadowFBO() const { return shadow_fbo_; }
+  GLuint GetShadowMap() const { return shadow_map_; }
+
  protected:
   Type type_ = Type::kNone;
 
@@ -48,6 +57,9 @@ class Light {
   glm::vec3 ambient_;
   glm::vec3 diffuse_;
   glm::vec3 specular_;
+
+  GLuint shadow_fbo_;
+  GLuint shadow_map_;
 };
 
 class DirectLight : public Light {
@@ -64,6 +76,10 @@ class DirectLight : public Light {
 
   glm::vec2 GetDirectionAngle() const;
   void SetDirectionAngle(float pitch, float yaw);
+
+  void GenerateShadowMisc() override;
+
+  glm::mat4 GetLightSpaceTrans() const;
 
  private:
   glm::vec3 direction_;
@@ -91,7 +107,8 @@ class PointLight : public Light {
   float GetQuadratic() const { return quadratic_; }
   void SetQuadratic(float quadratic);
 
- protected:
+  void GenerateShadowMisc() override;
+
   glm::vec3 position_;
 
   float constant_;
@@ -122,6 +139,8 @@ class SpotLight : public PointLight {
 
   float GetOuterCutOff() const { return outer_cut_off_; }
   void SetOuterCutOff(float outer_cut_off);
+
+  void GenerateShadowMisc() override;
 
  private:
   glm::vec3 direction_;

@@ -4,6 +4,8 @@
 
 #include <imgui.h>
 
+#include <iostream>
+
 Scene::Scene() {
   InitShadowMisc();
 }
@@ -19,7 +21,7 @@ void Scene::AddModel(const std::string& name, const std::shared_ptr<Model>& mode
 void Scene::GenerateShadowMap(const std::shared_ptr<GlobalController>& global_controller,
                               const std::shared_ptr<LightController>& light_controller) {
   // [Note] Assume first direct light, if exist.
-  glViewport(0, 0, kShadowWidth, kShadowHeight);
+  /*glViewport(0, 0, kShadowWidth, kShadowHeight);
   glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
   glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -43,7 +45,23 @@ void Scene::GenerateShadowMap(const std::shared_ptr<GlobalController>& global_co
   }
   glCullFace(GL_BACK);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
+
+  for (auto&& [name, direct_light] : light_controller->GetDirectLights()) {
+    glViewport(0, 0, Light::kShadowWidth, Light::kShadowHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, direct_light->GetShadowFBO());
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    shadow_shader_->Use();
+
+    shadow_shader_->SetMat4("light_space_trans", direct_light->GetLightSpaceTrans());
+
+    for (auto&& [name, model_pair] : models_) {
+      model_pair.first->Draw(shadow_shader_);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
 }
 
 void Scene::Render(const std::shared_ptr<GlobalController>& global_controller,
@@ -69,12 +87,16 @@ void Scene::Render(const std::shared_ptr<GlobalController>& global_controller,
 
       ApplyAndSetShaderGlobal(shader, global_controller);
 
-      shader->SetMat4("light_space_trans", light_space_trans_);
+      unsigned int i = 0;
+      for (auto&& [name, direct_light] : light_controller->GetDirectLights()) {
+        shader->SetMat4("light_space_trans", direct_light->GetLightSpaceTrans());
 
-      glActiveTexture(0);
-      glBindTexture(GL_TEXTURE_2D, shadow_map_);
-      shader->SetInt("shadow_map", 0);
-      shader->SetBool("shadow_enable", true);
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, direct_light->GetShadowMap());
+        shader->SetInt("shadow_map", i);
+        shader->SetBool("shadow_enable", true);
+        ++i;
+      }
 
       model_pair.first->Render(material, global_controller, light_controller);
     }
@@ -92,7 +114,7 @@ void Scene::Render(const std::shared_ptr<GlobalController>& global_controller,
   }
 
   if (global_controller->IsDisplayingShadowMap()) {
-    DisplayShadowMap();
+    DisplayShadowMap(light_controller);
   }
 }
 
@@ -134,24 +156,6 @@ void Scene::Config() {
 }
 
 void Scene::InitShadowMisc() {
-  glGenFramebuffers(1, &shadow_fbo_);
-
-  glGenTextures(1, &shadow_map_);
-  glBindTexture(GL_TEXTURE_2D, shadow_map_);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-  GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-  glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_map_, 0);
-  glDrawBuffer(GL_NONE);
-  glReadBuffer(GL_NONE);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
   shadow_shader_ = std::make_shared<Shader>("shadow_shader.vs", "shadow_shader.fs");
 
   // Shadow display
@@ -185,7 +189,7 @@ void Scene::InitShadowMisc() {
   shadow_display_shader_ = std::make_shared<Shader>("vertex_shader.vs", "shadow_display.fs");
 }
 
-void Scene::DisplayShadowMap() {
+void Scene::DisplayShadowMap(const std::shared_ptr<LightController>& light_controller) {
   // Display shadow map
   /*shadow_display_shader_->Use();
 
@@ -201,13 +205,23 @@ void Scene::DisplayShadowMap() {
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glBindVertexArray(0);*/
 
-  ImGui::PushID("ShadowMap");
+  /*ImGui::PushID("ShadowMap");
   ImGui::Begin("Shadow map");
 
   ImGui::Image((void*)(intptr_t)shadow_map_, ImVec2(200, 200));
 
   ImGui::End();
-  ImGui::PopID();
+  ImGui::PopID();*/
+
+  for (auto&& [name, direct_light] : light_controller->GetDirectLights()) {
+    ImGui::PushID(name.c_str());
+    ImGui::Begin(name.c_str());
+
+    ImGui::Image((void*)(intptr_t)(direct_light->GetShadowMap()), ImVec2(200, 200));
+
+    ImGui::End();
+    ImGui::PopID();
+  }
 }
 
 void Scene::ApplyAndSetShaderGlobal(const std::shared_ptr<Shader>& shader,

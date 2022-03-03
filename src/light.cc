@@ -30,6 +30,8 @@ void Light::SetSpecular(const glm::vec3& specular) {
   specular_ = specular;
 }
 
+void Light::GenerateShadowMisc() {}
+
 DirectLight::DirectLight(const glm::vec3& ambient,
                          const glm::vec3& diffuse,
                          const glm::vec3& specular,
@@ -39,6 +41,8 @@ DirectLight::DirectLight(const glm::vec3& ambient,
   type_ = Light::Type::kDirect;
   name_ = "Direct Light";
   enable_ = true;
+
+  GenerateShadowMisc();
 }
 
 void DirectLight::SetDirection(const glm::vec3& direction) {
@@ -73,6 +77,35 @@ void DirectLight::SetDirectionAngle(float pitch, float yaw) {
   direction_ = glm::normalize(direction);
 }
 
+void DirectLight::GenerateShadowMisc() {
+  glGenFramebuffers(1, &shadow_fbo_);
+
+  glGenTextures(1, &shadow_map_);
+  glBindTexture(GL_TEXTURE_2D, shadow_map_);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+  glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo_);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_map_, 0);
+  glDrawBuffer(GL_NONE);
+  glReadBuffer(GL_NONE);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+glm::mat4 DirectLight::GetLightSpaceTrans() const {
+  GLfloat near_plane = 0.1f, far_plane = 10.0f;
+  auto light_project = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+  auto light_view = glm::lookAt(-direction_ * 5.0f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+  auto light_space_trans = light_project * light_view;
+
+  return light_space_trans;
+}
+
 PointLight::PointLight(const glm::vec3& ambient,
                        const glm::vec3& diffuse,
                        const glm::vec3& specular,
@@ -83,6 +116,8 @@ PointLight::PointLight(const glm::vec3& ambient,
       constant_(constant), linear_(linear), quadratic_(quadratic) {
   type_ = Light::Type::kPoint;
   name_ = "Point Light";
+
+  GenerateShadowMisc();
 }
 
 void PointLight::SetPosition(const glm::vec3& position) {
@@ -99,6 +134,11 @@ void PointLight::SetLinear(float linear) {
 
 void PointLight::SetQuadratic(float quadratic) {
   quadratic_ = quadratic;
+}
+
+void PointLight::GenerateShadowMisc() {
+  glGenFramebuffers(1, &shadow_fbo_);
+  // TODO:
 }
 
 SpotLight::SpotLight(const glm::vec3& ambient,
@@ -154,4 +194,9 @@ void SpotLight::SetCutOff(float cut_off) {
 
 void SpotLight::SetOuterCutOff(float outer_cut_off) {
   outer_cut_off_ = outer_cut_off;
+}
+
+void SpotLight::GenerateShadowMisc() {
+  glGenFramebuffers(1, &shadow_fbo_);
+  // TODO:
 }
